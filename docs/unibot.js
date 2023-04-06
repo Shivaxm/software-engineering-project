@@ -1,41 +1,46 @@
-    window.onload = function() {
-        var greeting = document.getElementById("greeting");
-        greeting.innerHTML = "<p>Hi there! How can I assist you today?</p>";
-    }
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("chat-form");
 
-    function sendMessage() {
-        var inputField = document.querySelector(".input");
-        var messageText = inputField.value;
-        var chatBox = document.querySelector(".box");
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
 
-        // Display user message in chat box
-        var userMsg = document.createElement("div");
-        userMsg.classList.add("item", "right");
-        userMsg.innerHTML = '<div class="msg"><p>' + messageText + '</p></div>';
-        chatBox.appendChild(userMsg);
+    const input = document.getElementById("chat-input");
+    const message = input.value.trim();
 
-        // Send message using AJAX
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", "/chat_bot");
-        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                var botMsg = document.createElement("div");
-                botMsg.classList.add("item");
-                botMsg.innerHTML = '<div class="icon"><i class="fa fa-user"></i></div><div class="msg"><p>' + xhr.responseText + '</p></div>';
-                chatBox.appendChild(botMsg);
-                inputField.value = "";
-            }
-        };
-        xhr.send(JSON.stringify({message: messageText}));
-    }
+    if (message.length > 0) {
+      const xhr = new XMLHttpRequest();
 
-    function handleKeyUp(event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            sendMessage();
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+          const response = JSON.parse(xhr.responseText);
+          const answer = response.answer;
+          displayMessage(message, "right");
+          displayMessage(answer, "left");
+          input.value = "";
         }
-    }
+      };
 
-    var inputField = document.querySelector(".input");
-    inputField.addEventListener("keyup", handleKeyUp);
+      xhr.open("POST", "/ask", true);
+      xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      xhr.send(JSON.stringify({ message: message }));
+    }
+  });
+});
+
+function displayMessage(message, alignment) {
+  const box = document.querySelector(".box");
+  const item = document.createElement("div");
+  const icon = document.createElement("div");
+  const msg = document.createElement("div");
+  const p = document.createElement("p");
+
+  item.className = `item ${alignment}`;
+  icon.className = "icon";
+  msg.className = "msg";
+  p.textContent = message;
+
+  msg.appendChild(p);
+  item.appendChild(icon);
+  item.appendChild(msg);
+  box.appendChild(item);
+}
